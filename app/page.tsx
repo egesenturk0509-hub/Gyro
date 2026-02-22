@@ -139,13 +139,37 @@ export default function GyroAnalizPaneli() {
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6 text-black">
-        <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl border">
+        {/* Giriş kutusunun etrafındaki border (kenarlık) tamamen kaldırıldı */}
+        <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl border-none">
           <h1 className="text-2xl font-black text-center mb-10">Giriş Yap</h1>
           <form onSubmit={handleLogin} className="space-y-6">
             <input type="text" placeholder="Kullanıcı" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-slate-50 border rounded-2xl px-6 py-4" />
-            <input type="password" placeholder="Şifre" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-slate-50 border rounded-2xl px-6 py-4" />
+            
+            {/* Şifre Alanı: Göz ve Çapraz Çizgi Eklendi */}
+            <div className="relative w-full overflow-hidden rounded-2xl">
+              <input 
+                type="password" 
+                placeholder="Şifre" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                className="w-full bg-slate-50 border rounded-2xl px-6 py-4 pr-12" 
+              />
+              {/* Göz İkonu */}
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none z-20">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </div>
+              {/* Sağ üstten sol alta çapraz siyah çizgi */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" preserveAspectRatio="none">
+                <line x1="100%" y1="0%" x2="0%" y2="100%" stroke="black" strokeWidth="1.5" />
+              </svg>
+            </div>
+
             <button type="submit" className="w-full bg-slate-900 text-white font-bold py-5 rounded-full shadow-lg">Giriş</button>
           </form>
+          {loginStatus.message && <p className="mt-4 text-center font-bold text-red-500">{loginStatus.message}</p>}
         </div>
       </div>
     );
@@ -184,10 +208,10 @@ export default function GyroAnalizPaneli() {
               <div className="text-6xl font-mono font-bold mt-2">{gyroData.derece.toFixed(2)}°</div>
             </div>
 
-            {/* ACİL TAHLİYE KUTUSU - Ege'nin İsteğiyle Eklendi */}
+            {/* ACİL TAHLİYE KUTUSU - animate-pulse (yanıp sönme) kaldırıldı */}
             <div className={`md:col-span-2 p-8 rounded-[40px] text-center transition-all duration-300 min-h-[100px] flex items-center justify-center ${gyroData.derece >= 2 ? 'bg-red-600 shadow-lg scale-100 opacity-100' : 'bg-transparent scale-95 opacity-0'}`}>
               {gyroData.derece >= 2 && (
-                <div className="text-white text-4xl font-black tracking-widest animate-pulse">
+                <div className="text-white text-4xl font-black tracking-widest">
                   ⚠️ ACİL TAHLİYE ⚠️
                 </div>
               )}
