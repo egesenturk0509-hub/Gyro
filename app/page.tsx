@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 export default function GyroAnalizPaneli() {
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // Şifre görünürlük kontrolü
+  const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginStatus, setLoginStatus] = useState({ type: '', message: '' });
@@ -80,9 +80,7 @@ export default function GyroAnalizPaneli() {
 
   const connectSerial = async () => {
     if (isConnected) { await disconnectSerial(); return; }
-    if (history.length === 0) {
-      counterRef.current = 0;
-    }
+    if (history.length === 0) { counterRef.current = 0; }
 
     try {
       // @ts-ignore
@@ -113,27 +111,35 @@ export default function GyroAnalizPaneli() {
           if (yonMatch && dereceMatch) {
             let rawYon = yonMatch[1].toLowerCase();
             let formatliYon = rawYon === "ileri" ? "İleri" : rawYon.charAt(0).toLocaleUpperCase('tr-TR') + rawYon.slice(1);
-
             setGyroData({ yon: formatliYon, derece: parseFloat(dereceMatch[1]) });
             
             counterRef.current += 1;
-            const currentId = counterRef.current;
-            const uniqueId = `${Date.now()}-${currentId}-${Math.random().toString(36).substr(2, 5)}`;
             
-            setHistory(prev => {
-              const newEntry = { 
-                time: getFullTimestamp(), 
-                data: cleanValue, 
-                id: currentId, 
-                uid: uniqueId 
-              };
-              return [...prev, newEntry].slice(-100);
-            });
+            // HATA ÇÖZÜMÜ BURADA: Artık her verinin sonuna rastgele benzersiz bir kod ekleniyor.
+            const uniqueId = `${Date.now()}-${counterRef.current}-${Math.random().toString(36).substring(2, 9)}`;
+            
+            setHistory(prev => [...prev, { 
+              time: getFullTimestamp(), 
+              data: cleanValue, 
+              id: counterRef.current, 
+              uid: uniqueId 
+            }].slice(-100));
           }
         }
       }
     } catch (e) { setIsConnected(false); }
   };
+
+  // Dinamik Uyarı Fonksiyonu - SADELEŞTİRİLDİ (Not: yazısı kalktı)
+  const getAlertStyle = () => {
+    const d = gyroData.derece;
+    if (d >= 3) return { bg: 'bg-red-600', text: '⚠️ Acil Tahliye ⚠️', opacity: 'opacity-100 scale-100' };
+    if (d >= 2) return { bg: 'bg-orange-500', text: 'Tehlike!', opacity: 'opacity-100 scale-100' };
+    if (d >= 1) return { bg: 'bg-yellow-400', text: 'Dikkat!', opacity: 'opacity-100 scale-100' };
+    return { bg: 'bg-transparent', text: '', opacity: 'opacity-0 scale-95' };
+  };
+
+  const alert = getAlertStyle();
 
   if (!mounted) return null;
 
@@ -144,37 +150,20 @@ export default function GyroAnalizPaneli() {
           <h1 className="text-2xl font-black text-center mb-10">Giriş Yap</h1>
           <form onSubmit={handleLogin} className="space-y-6">
             <input type="text" placeholder="Kullanıcı" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-slate-50 border rounded-2xl px-6 py-4" />
-            
             <div className="relative w-full rounded-2xl">
-              <input 
-                type={showPassword ? "text" : "password"} // Dinamik tip
-                placeholder="Şifre" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                className="w-full bg-slate-50 border rounded-2xl px-6 py-4 pr-16" 
-              />
-              {/* Tıklanabilir Göz Alanı */}
-              <div 
-                className="absolute inset-y-0 right-0 flex items-center pr-4 cursor-pointer select-none"
-                onClick={() => setShowPassword(!showPassword)}
-              >
+              <input type={showPassword ? "text" : "password"} placeholder="Şifre" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-slate-50 border rounded-2xl px-6 py-4 pr-16" />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4 cursor-pointer" onClick={() => setShowPassword(!showPassword)}>
                 <div className="relative flex items-center justify-center w-10 h-10">
                   <span className="text-[30px] z-20">👁️</span>
-                  
-                  {/* Çizgi sadece şifre görünürken (showPassword === true) aktif olur */}
-                  <svg 
-                    className={`absolute inset-0 w-full h-full z-30 transition-opacity duration-200 ${showPassword ? 'opacity-100' : 'opacity-0'}`} 
-                    viewBox="0 0 40 40"
-                  >
+                  <svg className={`absolute inset-0 w-full h-full z-30 transition-opacity ${showPassword ? 'opacity-100' : 'opacity-0'}`} viewBox="0 0 40 40">
                     <line x1="31" y1="9" x2="9" y2="31" stroke="black" strokeWidth="2.5" strokeLinecap="round" />
                   </svg>
                 </div>
               </div>
             </div>
-
+            {loginStatus.message && <p className="text-red-500 font-bold text-center">{loginStatus.message}</p>}
             <button type="submit" className="w-full bg-slate-900 text-white font-bold py-5 rounded-full shadow-lg">Giriş</button>
           </form>
-          {loginStatus.message && <p className="mt-4 text-center font-bold text-red-500">{loginStatus.message}</p>}
         </div>
       </div>
     );
@@ -185,20 +174,10 @@ export default function GyroAnalizPaneli() {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col items-center mb-16 space-y-6">
           <div className="flex gap-4">
-            <button 
-              onClick={connectSerial} 
-              style={{ backgroundColor: isConnected ? 'rgb(255, 0, 0)' : '' }} 
-              className={`px-12 py-4 rounded-full font-bold transition-all text-lg shadow-md border-0 ${isConnected ? 'text-white' : 'bg-slate-100 text-black hover:bg-slate-200'}`}
-            >
+            <button onClick={connectSerial} style={{ backgroundColor: isConnected ? 'rgb(255, 0, 0)' : '' }} className={`px-12 py-4 rounded-full font-bold transition-all text-lg shadow-md border-0 ${isConnected ? 'text-white' : 'bg-slate-100 text-black hover:bg-slate-200'}`}>
               {isConnected ? "Bağlantıyı Kes" : "Arduino'ya Bağlan"}
             </button>
-            <button 
-              onClick={handleLogout} 
-              style={{ backgroundColor: 'rgb(255, 0, 0)' }} 
-              className="text-white px-10 py-4 rounded-full font-bold hover:opacity-90 transition-colors shadow-md border-0"
-            >
-              Çıkış Yap
-            </button>
+            <button onClick={handleLogout} style={{ backgroundColor: 'rgb(255, 0, 0)' }} className="text-white px-10 py-4 rounded-full font-bold hover:opacity-90 transition-colors shadow-md border-0">Çıkış Yap</button>
           </div>
           <h1 className="text-4xl font-black tracking-tight">Gyro Analiz Paneli</h1>
         </div>
@@ -213,12 +192,11 @@ export default function GyroAnalizPaneli() {
               <div className="text-6xl font-mono font-bold mt-2">{gyroData.derece.toFixed(2)}°</div>
             </div>
 
-            <div className={`md:col-span-2 p-8 rounded-[40px] text-center transition-all duration-300 min-h-[100px] flex items-center justify-center ${gyroData.derece >= 2 ? 'bg-red-600 shadow-lg scale-100 opacity-100' : 'bg-transparent scale-95 opacity-0'}`}>
-              {gyroData.derece >= 2 && (
-                <div className="text-white text-4xl font-black tracking-widest">
-                  ⚠️ ACİL TAHLİYE ⚠️
-                </div>
-              )}
+            {/* Uyarı Kutusu */}
+            <div className={`md:col-span-2 p-8 rounded-[40px] text-center transition-all duration-500 min-h-[100px] flex items-center justify-center ${alert.bg} ${alert.opacity}`}>
+               <div className="text-white text-4xl font-black tracking-wide drop-shadow-md">
+                  {alert.text}
+               </div>
             </div>
         </div>
 
