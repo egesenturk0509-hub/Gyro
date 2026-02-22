@@ -18,7 +18,6 @@ export default function GyroAnalizPaneli() {
   const readerRef = useRef<any>(null);
   const keepReading = useRef(true);
 
-  // Hydration hatasını önlemek için sadece istemci tarafında çalışır
   const getFullTimestamp = () => {
     const now = new Date();
     const date = now.toLocaleDateString('tr-TR');
@@ -80,8 +79,6 @@ export default function GyroAnalizPaneli() {
 
   const connectSerial = async () => {
     if (isConnected) { await disconnectSerial(); return; }
-    
-    // Eğer ekran boşsa sayacı tam sıfıra çek
     if (history.length === 0) {
       counterRef.current = 0;
     }
@@ -118,7 +115,6 @@ export default function GyroAnalizPaneli() {
 
             setGyroData({ yon: formatliYon, derece: parseFloat(dereceMatch[1]) });
             
-            // SAYAÇ MANTIĞI: Veri eklendikten sonra artırıyoruz
             counterRef.current += 1;
             const currentId = counterRef.current;
             const uniqueId = `${Date.now()}-${currentId}-${Math.random().toString(36).substr(2, 5)}`;
@@ -186,6 +182,15 @@ export default function GyroAnalizPaneli() {
             <div className="bg-slate-50 p-10 rounded-[40px] text-center shadow-sm">
               <span className="text-slate-400 font-bold tracking-widest uppercase text-xs">Derece</span>
               <div className="text-6xl font-mono font-bold mt-2">{gyroData.derece.toFixed(2)}°</div>
+            </div>
+
+            {/* ACİL TAHLİYE KUTUSU - Ege'nin İsteğiyle Eklendi */}
+            <div className={`md:col-span-2 p-8 rounded-[40px] text-center transition-all duration-300 min-h-[100px] flex items-center justify-center ${gyroData.derece >= 2 ? 'bg-red-600 shadow-lg scale-100 opacity-100' : 'bg-transparent scale-95 opacity-0'}`}>
+              {gyroData.derece >= 2 && (
+                <div className="text-white text-4xl font-black tracking-widest animate-pulse">
+                  ⚠️ ACİL TAHLİYE ⚠️
+                </div>
+              )}
             </div>
         </div>
 
