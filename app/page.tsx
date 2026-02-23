@@ -9,6 +9,11 @@ export default function GyroAnalizPaneli() {
   const [password, setPassword] = useState('');
   const [loginStatus, setLoginStatus] = useState({ type: '', message: '' });
 
+  // --- YENİ EKLENEN MENÜ STATELERİ ---
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [gyros, setGyros] = useState([{ id: 1, name: '1. Gyro' }]);
+  // ------------------------------------
+
   const [isConnected, setIsConnected] = useState(false);
   const [gyroData, setGyroData] = useState({ yon: 'Stabil', derece: 0 });
   const [history, setHistory] = useState<{time: string, data: string, id: number, uid: string}[]>([]);
@@ -114,8 +119,6 @@ export default function GyroAnalizPaneli() {
             setGyroData({ yon: formatliYon, derece: parseFloat(dereceMatch[1]) });
             
             counterRef.current += 1;
-            
-            // HATA ÇÖZÜMÜ BURADA: Artık her verinin sonuna rastgele benzersiz bir kod ekleniyor.
             const uniqueId = `${Date.now()}-${counterRef.current}-${Math.random().toString(36).substring(2, 9)}`;
             
             setHistory(prev => [...prev, { 
@@ -130,7 +133,17 @@ export default function GyroAnalizPaneli() {
     } catch (e) { setIsConnected(false); }
   };
 
-  // Dinamik Uyarı Fonksiyonu - SADELEŞTİRİLDİ (Not: yazısı kalktı)
+  // --- YENİ EKLENEN MENÜ FONKSİYONLARI ---
+  const addGyro = () => {
+    const newId = gyros.length + 1;
+    setGyros([...gyros, { id: newId, name: `${newId}. Gyro` }]);
+  };
+
+  const updateGyroName = (id: number, newName: string) => {
+    setGyros(gyros.map(g => g.id === id ? { ...g, name: newName } : g));
+  };
+  // ----------------------------------------
+
   const getAlertStyle = () => {
     const d = gyroData.derece;
     if (d >= 3) return { bg: 'bg-red-600', text: '⚠️ Acil Tahliye ⚠️', opacity: 'opacity-100 scale-100' };
@@ -170,56 +183,118 @@ export default function GyroAnalizPaneli() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-black p-6 font-sans">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col items-center mb-16 space-y-6">
-          <div className="flex gap-4">
-            <button onClick={connectSerial} style={{ backgroundColor: isConnected ? 'rgb(255, 0, 0)' : '' }} className={`px-12 py-4 rounded-full font-bold transition-all text-lg shadow-md border-0 ${isConnected ? 'text-white' : 'bg-slate-100 text-black hover:bg-slate-200'}`}>
-              {isConnected ? "Bağlantıyı Kes" : "Arduino'ya Bağlan"}
+    <div className="min-h-screen bg-white text-black font-sans relative">
+      
+      {/* --- YAN MENÜ (SIDEBAR) BAŞLANGICI --- */}
+      {/* Arka plan karartması */}
+      <div 
+        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+        onClick={() => setIsMenuOpen(false)}
+      />
+      
+      {/* Menü Paneli */}
+      <div className={`fixed top-0 left-0 h-full w-80 bg-slate-50 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 flex justify-between items-center border-b border-slate-200">
+          <h2 className="text-2xl font-black tracking-tight">Cihazlar</h2>
+          <button onClick={() => setIsMenuOpen(false)} className="text-slate-400 hover:text-red-500 transition-colors">
+            {/* Çarpı (X) İkonu */}
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {gyros.map((gyro) => (
+            <div key={gyro.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+              <input 
+                type="text" 
+                value={gyro.name} 
+                onChange={(e) => updateGyroName(gyro.id, e.target.value)}
+                className="w-full font-bold text-lg bg-transparent border-none outline-none text-slate-800"
+              />
+              <div className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-wider">Durum: Bekliyor</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-6 border-t border-slate-200">
+          <button 
+            onClick={addGyro}
+            className="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-md hover:bg-slate-800 transition-colors flex justify-center items-center gap-2"
+          >
+            <span className="text-2xl">+</span> Gyro Ekle
+          </button>
+        </div>
+      </div>
+      {/* --- YAN MENÜ BİTİŞİ --- */}
+
+
+      {/* --- ANA EKRAN İÇERİĞİ --- */}
+      <div className="p-6">
+        <div className="max-w-6xl mx-auto">
+          
+          <div className="flex flex-col items-center mb-16 space-y-6 relative">
+            
+            {/* Menü Açma Butonu (Hamburger İkonu) - SOL ÜST KÖŞE */}
+            <button 
+              onClick={() => setIsMenuOpen(true)}
+              className="absolute left-0 top-2 p-2 text-slate-800 hover:text-slate-500 transition-colors"
+            >
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
             </button>
-            <button onClick={handleLogout} style={{ backgroundColor: 'rgb(255, 0, 0)' }} className="text-white px-10 py-4 rounded-full font-bold hover:opacity-90 transition-colors shadow-md border-0">Çıkış Yap</button>
+
+            <div className="flex gap-4">
+              <button onClick={connectSerial} style={{ backgroundColor: isConnected ? 'rgb(255, 0, 0)' : '' }} className={`px-12 py-4 rounded-full font-bold transition-all text-lg shadow-md border-0 ${isConnected ? 'text-white' : 'bg-slate-100 text-black hover:bg-slate-200'}`}>
+                {isConnected ? "Bağlantıyı Kes" : "Arduino'ya Bağlan"}
+              </button>
+              <button onClick={handleLogout} style={{ backgroundColor: 'rgb(255, 0, 0)' }} className="text-white px-10 py-4 rounded-full font-bold hover:opacity-90 transition-colors shadow-md border-0">Çıkış Yap</button>
+            </div>
+            <h1 className="text-4xl font-black tracking-tight">Gyro Analiz Paneli</h1>
           </div>
-          <h1 className="text-4xl font-black tracking-tight">Gyro Analiz Paneli</h1>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-            <div className="bg-slate-50 p-10 rounded-[40px] text-center shadow-sm">
-              <span className="text-slate-400 font-bold tracking-widest uppercase text-xs">Yön</span>
-              <div className="text-6xl font-black mt-2 tracking-tight">{gyroData.yon}</div>
-            </div>
-            <div className="bg-slate-50 p-10 rounded-[40px] text-center shadow-sm">
-              <span className="text-slate-400 font-bold tracking-widest uppercase text-xs">Derece</span>
-              <div className="text-6xl font-mono font-bold mt-2">{gyroData.derece.toFixed(2)}°</div>
-            </div>
-
-            {/* Uyarı Kutusu */}
-            <div className={`md:col-span-2 p-8 rounded-[40px] text-center transition-all duration-500 min-h-[100px] flex items-center justify-center ${alert.bg} ${alert.opacity}`}>
-               <div className="text-white text-4xl font-black tracking-wide drop-shadow-md">
-                  {alert.text}
-               </div>
-            </div>
-        </div>
-
-        <div className="bg-white rounded-[40px] shadow-xl h-[500px] overflow-hidden flex flex-col border-0">
-          <div className="px-8 py-6 border-b border-slate-100 flex justify-between bg-slate-50">
-             <div className="flex gap-12 font-bold text-slate-400">
-              <span className="w-12">No</span>
-              <span className="w-64">Tarih Ve Saat</span>
-              <span>Arduino Verisi</span>
-            </div>
-            <button onClick={() => { setHistory([]); counterRef.current = 0; }} className="bg-red-500 hover:bg-red-600 transition-colors text-white px-6 py-2 rounded-full text-xs font-bold shadow-sm border-0">Temizle</button>
-          </div>
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-4 font-mono text-[13px]">
-            {history.map((item) => (
-              <div key={item.uid} className="flex gap-12 border-b border-slate-50 py-2 hover:bg-slate-50 transition-colors">
-                <span className="w-12 text-slate-400 font-bold">{item.id}</span>
-                <span className="w-64 text-blue-600 font-bold">{item.time}</span>
-                <span className="font-black text-slate-800">{item.data}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+              <div className="bg-slate-50 p-10 rounded-[40px] text-center shadow-sm">
+                <span className="text-slate-400 font-bold tracking-widest uppercase text-xs">Yön</span>
+                <div className="text-6xl font-black mt-2 tracking-tight">{gyroData.yon}</div>
               </div>
-            ))}
+              <div className="bg-slate-50 p-10 rounded-[40px] text-center shadow-sm">
+                <span className="text-slate-400 font-bold tracking-widest uppercase text-xs">Derece</span>
+                <div className="text-6xl font-mono font-bold mt-2">{gyroData.derece.toFixed(2)}°</div>
+              </div>
+
+              {/* Uyarı Kutusu */}
+              <div className={`md:col-span-2 p-8 rounded-[40px] text-center transition-all duration-500 min-h-[100px] flex items-center justify-center ${alert.bg} ${alert.opacity}`}>
+                 <div className="text-white text-4xl font-black tracking-wide drop-shadow-md">
+                    {alert.text}
+                 </div>
+              </div>
+          </div>
+
+          <div className="bg-white rounded-[40px] shadow-xl h-[500px] overflow-hidden flex flex-col border-0">
+            <div className="px-8 py-6 border-b border-slate-100 flex justify-between bg-slate-50">
+               <div className="flex gap-12 font-bold text-slate-400">
+                <span className="w-12">No</span>
+                <span className="w-64">Tarih Ve Saat</span>
+                <span>Arduino Verisi</span>
+              </div>
+              <button onClick={() => { setHistory([]); counterRef.current = 0; }} className="bg-red-500 hover:bg-red-600 transition-colors text-white px-6 py-2 rounded-full text-xs font-bold shadow-sm border-0">Temizle</button>
+            </div>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-4 font-mono text-[13px]">
+              {history.map((item) => (
+                <div key={item.uid} className="flex gap-12 border-b border-slate-50 py-2 hover:bg-slate-50 transition-colors">
+                  <span className="w-12 text-slate-400 font-bold">{item.id}</span>
+                  <span className="w-64 text-blue-600 font-bold">{item.time}</span>
+                  <span className="font-black text-slate-800">{item.data}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
+
     </div>
   );
 }
